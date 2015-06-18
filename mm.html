@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mastermind</title>
+    <link rel="stylesheet" type="text/css" href="mm.css">
+    
+</head>
+    
+<body>
+    
+<div class="panel" id="options"><a onclick="togglePanel('options')">[&gt;]</a>Game difficulty<br>
+    <input type="radio" name="level" value="E">Easy<br>
+    <input type="radio" name="level" value="M">Medium<br>
+    <input type="radio" name="level" value="H">Hard<br>
+    # of players<br>
+    <input type="radio" name="players" value="1">1<br>
+    <input type="radio" name="players" value="2">2<br>
+    
+    </div>
+<div class="panel" id="stats"><a onclick="togglePanel('stats')">[&gt;]</a>
+    Statistics<br>
+    Some other stuff here<br>
+    </div>
+<div class="panel" id="profile"><a onclick="togglePanel('profile')">[&gt;]</a>
+    Profile<br>
+    You can logout here<br>
+    </div>
+    
+<div id="gameboard"><center><h1>Mastermind</h1>   </center><canvas width="250" height="400" id="cnvs"></canvas>
+   <button onclick="doit()">hello</button>
+    </div>
+</body>
+    
+    
+<script>
+    var c = document.getElementById("cnvs");
+    var ctx = c.getContext("2d");
+  
+    function togglePanel(name){
+        var elem = document.getElementById(name);
+        elem.classList.toggle("show");
+    }
+    
+    function doit(){
+        ctx.fillStyle="red";
+        ctx.fillRect(0,0,250,450);
+    }
+</script>
+</html>

@@ -1,0 +1,81 @@
+body{
+    font-family: sans-serif;
+}
+#gameboard{
+    width:  300px;
+    height:  500px;
+    border: 2px solid #555;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color:burlywood;
+}
+.panel{
+    border: 2px solid #555;
+    background-color: #ccc;
+    position: fixed;
+    left: 210px;
+    border-radius: 0 1em 1em 0;
+    padding: 5px;
+    transition: all 0.1s ease-in-out;
+    font-family: sans-serif;
+    font-size: 10px;
+}
+
+    /* the settings for the options panel*/
+#options{
+  width: 100px;
+  top: 20px;
+}
+#options:hover {
+  left: 215px;
+}
+#options.show {
+  left: 305px;
+}
+        /* the settings for the statistics panel*/
+#stats{
+  width: 100px;
+  top: 160px;
+}
+#stats:hover {
+  left: 215px;
+}
+#stats.show {
+  left: 305px;
+}    
+          /* the settings for the profile panel*/
+#profile{
+  width: 100px;
+  top: 220px;
+}
+#profile:hover {
+  left: 215px;
+}
+#profile.show {
+  left: 305px;
+}    
+
+
+.panel a {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  color: black;
+  font-weight: bold;
+  padding: 2px;
+}
+.panel.show a {
+  transform: rotate(180deg);
+}
+
+#cnvs {
+    left: 25px;
+    position: fixed;
+}
+
+input {
+    width: 60px;
+}

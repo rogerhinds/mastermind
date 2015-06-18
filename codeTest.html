@@ -1,0 +1,73 @@
+<HTML>
+<body>
+    
+<input  id="code">
+    <input id="guess" >
+    <select id="dbl">
+    <optgroup  label="Doubles"><option name="double" value=true>Yes</option><option name="double" value=false>No</option></optgroup>
+    </select>
+    <button onclick="pegCheck()">
+    pegs</button>
+    <button onclick="generateCode()">random</button>
+    <input id="score">
+</body>
+
+<script>
+    var c = document.getElementById("code")
+    var g = document.getElementById("guess")
+    var s = document.getElementById("score")
+    var d = document.getElementById("dbl")
+    
+    function generateCode(){
+        var pegs=4 // allow for change in code length at different levels
+        var code =""
+        // allow colours between inputs
+        var minCol=parseInt(c.value)
+        var maxCol=parseInt(g.value)
+        
+        for(var a=0;a<pegs;a++){
+            code = code + Math.floor((Math.random() * (maxCol-minCol+1)) + minCol)
+        }
+        s.value = code
+    }
+    
+    function pegCheck(){
+        var used = new Array(3); // this will need ot be the length of the actual code
+        var matched = new Array(3); // which is based on level difficulty
+        
+        var guess = g.value
+        var code = c.value
+        
+        var white=0
+        var black=0
+        // clear the arrays
+        for(var a =0;a<4;a++){
+            used[a]=false
+            matched[a]=false
+        }
+        // do the white check
+        for(var a =0;a<4;a++){
+            if (guess[a]==code[a]){
+                used[a]=true
+                matched[a]=true
+                white++
+            }
+        }
+       // do the black check
+        for(var a=0;a<4;a++){
+            for(var b=0;b<4;b++){
+                // if code and guess peg not used/matched yet but are the same then it's a black peg!
+                if(!used[a] && !matched[b] && guess[a]==code[b]){
+                    used[a]=true
+                    matched[b]=true
+                    black++
+                }
+            }
+        }
+        
+        alert("You get " + white + " white pegs and " + black + " black pegs")
+    }
+    
+   
+    </script>
+</HTML>

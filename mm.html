@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,15 +7,16 @@
     
 </head>
     
-<body>
+<body onload="initialise()">
+    <img src="https://cloud.githubusercontent.com/assets/12826315/8430227/7e4e6744-1f27-11e5-8ad1-f1a0701fadb9.jpg"  hidden="hidden" id="wood">
     
 <div class="panel" id="options"><a onclick="togglePanel('options')">[&gt;]</a>Game difficulty<br>
-    <input type="radio" name="level" value="E">Easy<br>
-    <input type="radio" name="level" value="M">Medium<br>
-    <input type="radio" name="level" value="H">Hard<br>
+    <input type="radio" name="level" value="E" onclick="setLevel('e')">Easy<br>
+    <input type="radio" name="level" value="M" onclick="setLevel('m')">Medium<br>
+    <input type="radio" name="level" value="H" onclick="setLevel('h')">Hard<br>
     # of players<br>
-    <input type="radio" name="players" value="1">1<br>
-    <input type="radio" name="players" value="2">2<br>
+    <input type="radio" name="players" value="1" onclick="setPlayers(1)">1<br>
+    <input type="radio" name="players" value="2" onclick="setPlayers(2)">2<br>
     
     </div>
 <div class="panel" id="stats"><a onclick="togglePanel('stats')">[&gt;]</a>
@@ -26,24 +28,278 @@
     You can logout here<br>
     </div>
     
-<div id="gameboard"><center><h1>Mastermind</h1>   </center><canvas width="250" height="400" id="cnvs"></canvas>
-   <button onclick="doit()">hello</button>
-    </div>
+<div id="gameboard" ><center><h1>Mastermind</h1></center>
+    <canvas onmouseup="placePeg()" width="150" height="323" id="board"></canvas>
+    <canvas onmouseup="choosePeg()" width="26" height="260" id="legend"></canvas>
+    <button onclick="pegCheck()">Check my Score</button>
+</div>
 </body>
     
     
 <script>
-    var c = document.getElementById("cnvs");
-    var ctx = c.getContext("2d");
-  
+    var b = document.getElementById("board");
+    var bctx = b.getContext("2d");
+    var l = document.getElementById("legend");
+    var lctx = l.getContext("2d");
+    var w = document.getElementById("wood");
+    var code="1256";
+    var colours=["grey","red","yellow","green","blue","pink","purple","orange","white","black"]
+    var pegColour=0;
+    var turn=[];
+    var score=[];
+    var currentGuess;
+    var pegSize=11;
+    var playing=true;
+    var firstColour;
+    var lastColour;
+    var useDoubles;
+    
     function togglePanel(name){
         var elem = document.getElementById(name);
         elem.classList.toggle("show");
     }
     
-    function doit(){
-        ctx.fillStyle="red";
-        ctx.fillRect(0,0,250,450);
+    function setPlayers(n){
+        // at present this is just toggling 'playing' so can see code for testing
+        playing=(n==1)
+        drawBoard()
     }
+    
+    function setLevel(l){
+        // determine the range of available colours and if doubles are allowed
+        switch(l){
+            case 'e':
+            // only 6 colours, no doubles
+                firstColour=1
+                lastColour=6
+                useDoubles=false
+                break
+            case 'm':
+            // 7 colours, no blanks, doubles allowed
+                firstColour=1
+                lastColour=7
+                useDoubles=true
+                break
+            case 'h':
+            // 9 colours and blanks (i.e. 10 colours), doubles allowed
+                firstColour=0
+                lastColour=9
+                useDoubles=true
+                break
+        }
+        newGame()
+    }
+        
+    function initialise(){
+        setLevel('e')
+        newGame()
+    }
+    
+    function newGame(){
+        // create a 2d array of pegs
+        for(var t = 0 ; t<11; t++){
+            var tu = new Array(3)
+            for(var ta = 0; ta < 4; ta++){
+                tu[ta]=0
+            }
+            turn[t]=tu
+        }
+        // initialise the score array as well
+        for(var s =0; s<11;s++){
+            var su = new Array(1)
+            for(var sa = 0; sa<2;sa++){
+                su[sa]=0
+            }
+            score[s]=su
+        }
+        playing=true
+        currentGuess=1
+        generateCode(firstColour,lastColour,useDoubles)
+        updateUI()
+    }
+    
+    function updateUI(){
+        drawBoard()
+        drawLegend()
+    }
+    
+    function drawBoard(){
+        bctx.clearRect(0,0,290,400)
+        // the secret code, show it if not playing at moment
+        if(!playing){
+            for(var p = 0 ; p < 4 ; p++){
+                drawPeg(bctx,turn[0][p],p*26+13,13,pegSize,false,true)
+            }
+        }
+        // the rest of the pegs
+        for(var t = 1;t<11;t++){
+            for(var p = 0 ; p < 4 ; p++){
+                // draw the guess peg
+                drawPeg(bctx,turn[t][p],p*26+13,(11-t)*26+50,pegSize,(t==currentGuess),true);
+            }
+            // draw the score peg
+            drawScorePeg(t)
+        }
+        
+    }
+    
+    function makeScorePattern(t){
+        // generate the correct list of white and black and blanks (8,9,0) for the given turn
+        var pt=""
+        for(var w=0;w<score[t][0];w++){pt+="8"}
+        for(var b=0;b<score[t][1];b++){pt+="9"}
+        for(var e=0;e<4-(score[t][0]+score[t][1]);e++){pt+="0"}
+        return pt
+    }
+    
+    function drawScorePeg(t){
+        // get the right pattern of 890 then draw the score pegs in
+        var pat=makeScorePattern(t)
+        var y = (11-t)*26+38
+        var x = 105
+        drawPeg(bctx,pat[0],x+6,y+6,5,false,false)
+        drawPeg(bctx,pat[1],x+17,y+6,5,false,false)
+        drawPeg(bctx,pat[2],x+6,y+17,5,false,false)
+        drawPeg(bctx,pat[3],x+17,y+17,5,false,false)
+        
+    }
+    
+    function placePeg(){
+        var rect = b.getBoundingClientRect();
+        var x = Math.floor((event.clientX - rect.left)/26);
+        var y = 11-Math.floor((event.clientY - rect.top-37)/26);
+        if(playing && y==currentGuess ){
+            turn[y][x] = pegColour
+            drawBoard()
+        }
+    }
+    
+    function drawLegend(){
+        lctx.clearRect(0,0,26,400)
+        // clear the legend
+        for(var p = 0 ; p<=lastColour ; p++){
+            drawPeg(lctx,p,13,p*26+13,pegSize,(pegColour == p),true)
+        }
+    }
+    
+    function drawPeg(ctxt,col,x,y,rad,highlight,shine){
+        ctxt.beginPath()
+            if(highlight){
+                ctxt.lineWidth=3
+            }
+            else{
+                ctxt.lineWidth=1
+            }
+            ctxt.arc(x,y,rad,0,2*Math.PI)
+            ctxt.stroke();
+            // only fill if colour is >0 i.e. not the 'blank'    
+            if(col>0){
+                ctxt.fillStyle=colours[col];
+                ctxt.fill();
+                if(shine){
+                    ctxt.closePath();
+                    ctxt.beginPath();
+                    ctxt.arc(x+3,y-4,3,0,2*Math.PI)
+                    ctxt.fillStyle="rgba(255, 255, 255,0.5)";
+                    ctxt.fill();
+                }
+            }
+            ctxt.closePath();
+    }
+    
+    function choosePeg(){
+        var rect = l.getBoundingClientRect();
+        var temp = Math.floor((event.clientY - rect.top)/26);
+        if(temp<=lastColour)pegColour=temp
+        drawLegend();
+    }
+    
+    function generateCode(minCol,maxCol,doubles){
+        var pegs=4 // allow for change in code length at different levels
+        //var code =""
+        var nextDigit
+        
+        for(var a=0;a<pegs;a++){
+            if(!doubles){
+                // don't want any doubles
+                do{
+                    var useIt = true
+                    // make a number
+                    nextDigit = Math.floor((Math.random() * (maxCol-minCol+1)) + minCol)
+                    for(var pos = 0; pos < a; pos++){
+                        // check it against the rest
+                        if(nextDigit == turn[0][pos]){
+                            useIt=false
+                        }
+                    }
+                }while(useIt==false) // keep checking until it comes out good
+            }
+            else{
+                // don't care if we have doubles, just use the number
+               nextDigit = Math.floor((Math.random() * (maxCol-minCol+1)) + minCol) 
+            }
+            // add it to the code
+            turn[0][a] = nextDigit
+        }
+        
+    }
+        
+    function pegCheck(){
+        if(playing){
+            // compare this turn with the secret code
+            var used = new Array(3); // this will need to be the length of the actual code
+            var matched = new Array(3); // which is based on level difficulty
+
+            var white=0
+            var black=0
+            // clear the arrays
+            for(var a =0;a<4;a++){
+                used[a]=false
+                matched[a]=false
+            }
+            // do the white check
+            for(var a =0;a<4;a++){
+                if (turn[currentGuess][a]==turn[0][a]){
+                    used[a]=true
+                    matched[a]=true
+                    white++
+                }
+            }
+           // do the black check
+            for(var a=0;a<4;a++){
+                for(var b=0;b<4;b++){
+                    // if code and guess peg not used/matched yet but are the same then it's a black peg!
+                    if(!used[a] && !matched[b] && turn[currentGuess][a]==turn[0][b]){
+                        used[a]=true
+                        matched[b]=true
+                        black++
+                    }
+                }
+            }
+
+            score[currentGuess][0]=white
+            score[currentGuess][1]=black
+            currentGuess++
+            drawBoard()
+            checkWin()
+            //alert("You get " + white + " white pegs and " + black + " black pegs")
+        }
+    }
+        
+    function checkWin(){
+        // if game is won, or out of goes, or given up then stop playing
+        if(score[currentGuess-1][0]==4){
+            playing=false
+            drawBoard()
+            alert("You did it!!")
+        }
+        else if(currentGuess>10){
+            playing=false
+            drawBoard()
+            alert("Out of goes :(")
+        }
+                  
+    }
+        
 </script>
 </html>

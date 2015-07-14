@@ -36,7 +36,7 @@ body{
         /* the settings for the statistics panel*/
 #stats{
   width: 100px;
-  top: 160px;
+  top: 260px;
 }
 #stats:hover {
   left: 155px;
@@ -47,7 +47,7 @@ body{
           /* the settings for the profile panel*/
 #profile{
   width: 100px;
-  top: 210px;
+  top: 160px;
 }
 #profile:hover {
   left: 155px;
@@ -69,7 +69,11 @@ body{
 .panel.show a {
   transform: rotate(180deg);
 }
- 
+
+.nosee {
+  visibility: hidden;
+} 
+
 #board {
     left: 25px;
     position: fixed;

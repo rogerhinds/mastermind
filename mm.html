@@ -19,10 +19,6 @@
     <input type="radio" name="players" value="2" onclick="setPlayers(2)">2<br>
     
     </div>
-<div class="panel" id="stats"><a class="panelClick" onclick="togglePanel('stats')">[&gt;]</a>
-    Statistics<br>
-    Some other stuff here<br>
-    </div>
 <div class="panel" id="profile"><a class="panelClick" onclick="togglePanel('profile')">[&gt;]</a>
     Profile<br>
     <input type="text" name="username" id="username"/>
@@ -30,6 +26,13 @@
     <button onclick="login()" id="logon">Login</button><br>
     You can <a onclick="logout()">logout here</a><br>
     </div>
+<div class="panel nosee" id="stats"><a class="panelClick" onclick="togglePanel('stats')">[&gt;]</a>
+    <div id="statContent">
+    Statistics<br>
+    Some other stuff here<br>
+    </div>
+</div>
+
     
 <div id="gameboard" ><center><h1>Mastermind</h1></center>
     <canvas onmouseup="placePeg()" width="150" height="323" id="board"></canvas>
@@ -47,8 +50,9 @@
     var w = document.getElementById("wood");
     var uname = document.getElementById("username");
     var pwd = document.getElementById("password");
+    var stcnt=document.getElementById("statContent");
     var code="1256";
-    var colours=["grey","red","yellow","green","blue","pink","purple","orange","white","black"]
+    var colours=["grey","red","yellow","green","blue","pink","purple","orange","white","black"];
     var pegColour=0;
     var turn=[];
     var score=[];
@@ -65,6 +69,11 @@
     function togglePanel(name){
         var elem = document.getElementById(name);
         elem.classList.toggle("show");
+    }
+    
+    function togglePanelInvisibility(name,state){
+        var elem = document.getElementById(name);
+        elem.classList.toggle("nosee",state);
     }
     
     function setPlayers(n){
@@ -346,9 +355,14 @@
                 
                 currentPlayer=xh.responseText;
                 if(currentPlayer>""){
+                    // clear boxes
                     uname.value="";
                     pwd.value="";
+                    // collapse panel
                     togglePanel('profile');
+                    togglePanelInvisibility('stats',false);
+                    
+                    getStats();
                 }
             }
                 //alert(xh.responseText)}
@@ -357,9 +371,23 @@
         xh.send();
     }
     
+    function getStats(){
+        xh = new XMLHttpRequest();
+        xh.onreadystatechange=function(){
+            if(xh.readyState== 4 && xh.status==200){
+                stcnt.innerHTML="Stats for "+currentPlayer + "<br><table>"+xh.responseText+"</table";
+                
+            }
+                //alert(xh.responseText)}
+        }
+        xh.open("GET","getStats.php?p=" + currentPlayer,true);
+        xh.send();
+    }
+    
     function logout(){
         alert("logged out")
         currentPlayer=""
+        togglePanelInvisibility('stats',true);
     }
     
     function hashcode(s){

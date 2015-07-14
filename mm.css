@@ -56,7 +56,7 @@ body{
   left: 245px;
 }    
  
-.panel a {
+.panelClick {
   position: absolute;
   right: 0px;
   top: 0px;
@@ -80,14 +80,16 @@ input {
 }
  
 #legend {
-    //background-color: aqua;
+    /*background-color: aqua;*/
     left: 200px;
     top: 145px;
     position: fixed;
 }
  
-button {
+#chk {
     left: 30px;
     top: 410px;
     position: fixed;
 }
+
+

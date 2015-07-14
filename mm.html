@@ -8,30 +8,33 @@
 </head>
     
 <body onload="initialise()">
-    <img src="https://cloud.githubusercontent.com/assets/12826315/8430227/7e4e6744-1f27-11e5-8ad1-f1a0701fadb9.jpg"  hidden="hidden" id="wood">
+    <img src="light-wood-texture.jpg"  hidden="hidden" id="wood">
     
-<div class="panel" id="options"><a onclick="togglePanel('options')">[&gt;]</a>Game difficulty<br>
-    <input type="radio" name="level" value="E" onclick="setLevel('e')">Easy<br>
-    <input type="radio" name="level" value="M" onclick="setLevel('m')">Medium<br>
-    <input type="radio" name="level" value="H" onclick="setLevel('h')">Hard<br>
+<div class="panel" id="options"><a class="panelClick"  onclick="togglePanel('options')">[&gt;]</a>Game difficulty<br>
+    <input type="radio" name="level" value="E" onclick="setLevel('0')">Easy<br>
+    <input type="radio" name="level" value="M" onclick="setLevel('1')">Medium<br>
+    <input type="radio" name="level" value="H" onclick="setLevel('2')">Hard<br>
     # of players<br>
     <input type="radio" name="players" value="1" onclick="setPlayers(1)">1<br>
     <input type="radio" name="players" value="2" onclick="setPlayers(2)">2<br>
     
     </div>
-<div class="panel" id="stats"><a onclick="togglePanel('stats')">[&gt;]</a>
+<div class="panel" id="stats"><a class="panelClick" onclick="togglePanel('stats')">[&gt;]</a>
     Statistics<br>
     Some other stuff here<br>
     </div>
-<div class="panel" id="profile"><a onclick="togglePanel('profile')">[&gt;]</a>
+<div class="panel" id="profile"><a class="panelClick" onclick="togglePanel('profile')">[&gt;]</a>
     Profile<br>
-    You can logout here<br>
+    <input type="text" name="username" id="username"/>
+    <input type="password" name="password" id="password"/>
+    <button onclick="login()" id="logon">Login</button><br>
+    You can <a onclick="logout()">logout here</a><br>
     </div>
     
 <div id="gameboard" ><center><h1>Mastermind</h1></center>
     <canvas onmouseup="placePeg()" width="150" height="323" id="board"></canvas>
     <canvas onmouseup="choosePeg()" width="26" height="260" id="legend"></canvas>
-    <button onclick="pegCheck()">Check my Score</button>
+    <button onclick="pegCheck()" id="chk" >Check my Score</button>
 </div>
 </body>
     
@@ -42,6 +45,8 @@
     var l = document.getElementById("legend");
     var lctx = l.getContext("2d");
     var w = document.getElementById("wood");
+    var uname = document.getElementById("username");
+    var pwd = document.getElementById("password");
     var code="1256";
     var colours=["grey","red","yellow","green","blue","pink","purple","orange","white","black"]
     var pegColour=0;
@@ -50,9 +55,12 @@
     var currentGuess;
     var pegSize=11;
     var playing=true;
+    var currentPlayer=""
     var firstColour;
     var lastColour;
     var useDoubles;
+    var xh;
+    var gameLevel=0;
     
     function togglePanel(name){
         var elem = document.getElementById(name);
@@ -68,30 +76,33 @@
     function setLevel(l){
         // determine the range of available colours and if doubles are allowed
         switch(l){
-            case 'e':
+            case '0':
             // only 6 colours, no doubles
                 firstColour=1
                 lastColour=6
                 useDoubles=false
                 break
-            case 'm':
+            case '1':
             // 7 colours, no blanks, doubles allowed
                 firstColour=1
                 lastColour=7
                 useDoubles=true
                 break
-            case 'h':
+            case '2':
             // 9 colours and blanks (i.e. 10 colours), doubles allowed
                 firstColour=0
                 lastColour=9
                 useDoubles=true
                 break
+            default:
+                return;
         }
+        gameLevel=l
         newGame()
     }
         
     function initialise(){
-        setLevel('e')
+        setLevel('0')
         newGame()
     }
     
@@ -291,15 +302,69 @@
         if(score[currentGuess-1][0]==4){
             playing=false
             drawBoard()
-            alert("You did it!!")
+            saveResult()
+           // alert("You did it!!")
         }
         else if(currentGuess>10){
             playing=false
             drawBoard()
-            alert("Out of goes :(")
+            saveResult()
+          //  alert("Out of goes :(")
         }
                   
     }
         
+    function saveResult(){ 
+        /* use an xmlhttprequest to store game result in the database
+        and to display the return value 'Success' or not */
+            var score = (11-currentGuess)*100;
+            var resultString="p="+currentPlayer+"&l="+gameLevel+"&ps=0&gt=0&sc=" + score;
+            
+            xh = new XMLHttpRequest();
+            xh.onreadystatechange=function(){
+                if(xh.readyState== 4 && xh.status==200){
+                    document.getElementById("chk").innerHTML=xh.responseText;}
+            }
+            xh.open("GET","saveResult.php?" + resultString,true);
+            xh.send();
+    }
+    
+    function showhash(){
+        var un=document.getElementById("username").value;
+        alert(hashcode(un));
+    }
+    
+    function login(){
+        // hash the password, transmit that and th user anme
+        // if it is a match then return will be player ID
+        // if not then will be -1
+        var loginDetail="p="+uname.value+"&ph="+hashcode(pwd.value);
+        
+        xh = new XMLHttpRequest();
+        xh.onreadystatechange=function(){
+            if(xh.readyState== 4 && xh.status==200){
+                
+                currentPlayer=xh.responseText;
+                if(currentPlayer>""){
+                    uname.value="";
+                    pwd.value="";
+                    togglePanel('profile');
+                }
+            }
+                //alert(xh.responseText)}
+        }
+        xh.open("GET","login.php?" + loginDetail,true);
+        xh.send();
+    }
+    
+    function logout(){
+        alert("logged out")
+        currentPlayer=""
+    }
+    
+    function hashcode(s){
+        // taken wholesale off a forum - stackoverflow I think
+  return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);              
+}
 </script>
 </html>

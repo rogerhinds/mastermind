@@ -8,10 +8,21 @@ if (!$con) {
 $sql="SELECT * FROM result WHERE PName='$pn'";
 
 $result = mysqli_query($con,$sql) or die("Error finding $pn");
+$t=date_create();
+
 while($row=mysqli_fetch_array($result)){
-    $d=$row["Date"];
+    $d=date_create($row["Date"]);
     $s=$row["Score"];
-    echo "<tr><td>$d</td><td>$s</td></tr>";
+    
+    switch(date_diff($d,$t)){
+        case 0:
+            $date = "Today at " . date_format($d, 'H:i');
+    }
+    
+    $date = date_format($d, 'Y-m-d H:i:s');
+    
+    
+    echo "<tr><td>$date</td><td>$s</td></tr>";
 }
 
 mysqli_close($con);

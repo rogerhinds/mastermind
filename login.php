@@ -1,7 +1,7 @@
 <?php
 $pn=($_GET['p']);
 $passwdhash=intval($_GET['ph']);
-$con = mysqli_connect('rogerhinds-mastermind2-1636810','rogerhinds','','mm',3306);
+$con = mysqli_connect ('rogerhinds-mastermind2-1636810','rogerhinds','','mm',3306);
 if (!$con) {
     die('Could not connect: '.mysqli_error($con));
 }

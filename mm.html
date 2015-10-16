@@ -1,10 +1,10 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Mastermind</title>
     <link rel="stylesheet" type="text/css" href="mm.css">
-    
+    <script src="/socket.io/socket.io.js"></script>
+   
 </head>
     
 <body onload="initialise()">
@@ -20,7 +20,7 @@
     
     </div>
 <div class="panel" id="profile"><a class="panelClick" onclick="togglePanel('profile')">[&gt;]</a>
-    Profile<br>
+    <div id="userLabel">Please login<br></div>
     <input type="text" name="username" id="username"/>
     <input type="password" name="password" id="password"/>
     <button onclick="login()" id="logon">Login</button><br>
@@ -51,6 +51,7 @@
     var uname = document.getElementById("username");
     var pwd = document.getElementById("password");
     var stcnt=document.getElementById("statContent");
+    var usrLbl = document.getElementById("userLabel");
     var code="1256";
     var colours=["grey","red","yellow","green","blue","pink","purple","orange","white","black"];
     var pegColour=0;
@@ -66,6 +67,36 @@
     var xh;
     var gameLevel=0;
     
+    var socket = io.connect("https://mastermind2-rogerhinds.c9.io");
+    // system is connected to the server
+    socket.on('heard', function(data){alert(data.message);});
+    
+    // a login message has come from server, will have the player's name in if successful
+    socket.on('goodLogin', function(data){
+       if(data>""){
+            currentPlayer=data;
+            // clear boxes
+            uname.value="";
+            pwd.value="";
+            // collapse panel
+            togglePanel('profile');
+            togglePanelInvisibility('stats',false);
+            usrLbl.textContent="Logged in as " + currentPlayer;
+            getStats();
+        } 
+    });
+    // login was not possible using provided info, so logout
+    socket.on('badLogin', function(data){
+        logout();
+    })
+    
+    // statistics on the currently logged on player have been returned
+    socket.on('stats',function(data) {
+        // the stats have been returned as a result of logging on
+        // should be an html string 
+        stcnt.innerHTML=data;
+    })
+    
     function togglePanel(name){
         var elem = document.getElementById(name);
         elem.classList.toggle("show");
@@ -78,8 +109,8 @@
     
     function setPlayers(n){
         // at present this is just toggling 'playing' so can see code for testing
-        playing=(n==1)
-        drawBoard()
+        playing=(n==1);
+        drawBoard();
     }
     
     function setLevel(l){
@@ -87,22 +118,22 @@
         switch(l){
             case '0':
             // only 6 colours, no doubles
-                firstColour=1
-                lastColour=6
-                useDoubles=false
-                break
+                firstColour=1;
+                lastColour=6;
+                useDoubles=false;
+                break;
             case '1':
             // 7 colours, no blanks, doubles allowed
-                firstColour=1
-                lastColour=7
-                useDoubles=true
-                break
+                firstColour=1;
+                lastColour=7;
+                useDoubles=true;
+                break;
             case '2':
             // 9 colours and blanks (i.e. 10 colours), doubles allowed
-                firstColour=0
-                lastColour=9
-                useDoubles=true
-                break
+                firstColour=0;
+                lastColour=9;
+                useDoubles=true;
+                break;
             default:
                 return;
         }
@@ -111,44 +142,44 @@
     }
         
     function initialise(){
-        setLevel('0')
-        newGame()
+        setLevel('0');
+        newGame();
     }
     
     function newGame(){
         // create a 2d array of pegs
         for(var t = 0 ; t<11; t++){
-            var tu = new Array(3)
+            var tu = new Array(3);
             for(var ta = 0; ta < 4; ta++){
-                tu[ta]=0
+                tu[ta]=0;
             }
-            turn[t]=tu
+            turn[t]=tu;
         }
         // initialise the score array as well
         for(var s =0; s<11;s++){
-            var su = new Array(1)
+            var su = new Array(1);
             for(var sa = 0; sa<2;sa++){
-                su[sa]=0
+                su[sa]=0;
             }
-            score[s]=su
+            score[s]=su;
         }
-        playing=true
-        currentGuess=1
-        generateCode(firstColour,lastColour,useDoubles)
-        updateUI()
+        playing=true;
+        currentGuess=1;
+        generateCode(firstColour,lastColour,useDoubles);
+        updateUI();
     }
     
     function updateUI(){
-        drawBoard()
-        drawLegend()
+        drawBoard();
+        drawLegend();
     }
     
     function drawBoard(){
-        bctx.clearRect(0,0,290,400)
+        bctx.clearRect(0,0,290,400);
         // the secret code, show it if not playing at moment
         if(!playing){
             for(var p = 0 ; p < 4 ; p++){
-                drawPeg(bctx,turn[0][p],p*26+13,13,pegSize,false,true)
+                drawPeg(bctx,turn[0][p],p*26+13,13,pegSize,false,true);
             }
         }
         // the rest of the pegs
@@ -158,18 +189,19 @@
                 drawPeg(bctx,turn[t][p],p*26+13,(11-t)*26+50,pegSize,(t==currentGuess),true);
             }
             // draw the score peg
-            drawScorePeg(t)
+            drawScorePeg(t);
         }
         
     }
     
     function makeScorePattern(t){
         // generate the correct list of white and black and blanks (8,9,0) for the given turn
-        var pt=""
-        for(var w=0;w<score[t][0];w++){pt+="8"}
-        for(var b=0;b<score[t][1];b++){pt+="9"}
-        for(var e=0;e<4-(score[t][0]+score[t][1]);e++){pt+="0"}
-        return pt
+        // returns a string where 8 represents a white, 9 a black and 0 no peg
+        var pt="";
+        for(var w=0;w<score[t][0];w++){pt+="8";}
+        for(var b=0;b<score[t][1];b++){pt+="9";}
+        for(var e=0;e<4-(score[t][0]+score[t][1]);e++){pt+="0";}
+        return pt;
     }
     
     function drawScorePeg(t){
@@ -185,32 +217,33 @@
     }
     
     function placePeg(){
+        // called by the board canvas mouseUp event
         var rect = b.getBoundingClientRect();
         var x = Math.floor((event.clientX - rect.left)/26);
         var y = 11-Math.floor((event.clientY - rect.top-37)/26);
         if(playing && y==currentGuess ){
-            turn[y][x] = pegColour
-            drawBoard()
+            turn[y][x] = pegColour;
+            drawBoard();
         }
     }
     
     function drawLegend(){
-        lctx.clearRect(0,0,26,400)
+        lctx.clearRect(0,0,26,400);
         // clear the legend
         for(var p = 0 ; p<=lastColour ; p++){
-            drawPeg(lctx,p,13,p*26+13,pegSize,(pegColour == p),true)
+            drawPeg(lctx,p,13,p*26+13,pegSize,(pegColour == p),true);
         }
     }
     
     function drawPeg(ctxt,col,x,y,rad,highlight,shine){
-        ctxt.beginPath()
+        ctxt.beginPath();
             if(highlight){
-                ctxt.lineWidth=3
+                ctxt.lineWidth=3;
             }
             else{
-                ctxt.lineWidth=1
+                ctxt.lineWidth=1;
             }
-            ctxt.arc(x,y,rad,0,2*Math.PI)
+            ctxt.arc(x,y,rad,0,2*Math.PI);
             ctxt.stroke();
             // only fill if colour is >0 i.e. not the 'blank'    
             if(col>0){
@@ -219,7 +252,7 @@
                 if(shine){
                     ctxt.closePath();
                     ctxt.beginPath();
-                    ctxt.arc(x+3,y-4,3,0,2*Math.PI)
+                    ctxt.arc(x+3,y-4,3,0,2*Math.PI);
                     ctxt.fillStyle="rgba(255, 255, 255,0.5)";
                     ctxt.fill();
                 }
@@ -228,38 +261,39 @@
     }
     
     function choosePeg(){
+        // called by the legend canvas mouseUp event
         var rect = l.getBoundingClientRect();
         var temp = Math.floor((event.clientY - rect.top)/26);
-        if(temp<=lastColour)pegColour=temp
+        if(temp<=lastColour)pegColour=temp;
         drawLegend();
     }
     
     function generateCode(minCol,maxCol,doubles){
-        var pegs=4 // allow for change in code length at different levels
+        var pegs=4; // allow for change in code length at different levels
         //var code =""
-        var nextDigit
+        var nextDigit;
         
         for(var a=0;a<pegs;a++){
             if(!doubles){
                 // don't want any doubles
                 do{
-                    var useIt = true
+                    var useIt = true;
                     // make a number
-                    nextDigit = Math.floor((Math.random() * (maxCol-minCol+1)) + minCol)
+                    nextDigit = Math.floor((Math.random() * (maxCol-minCol+1)) + minCol);
                     for(var pos = 0; pos < a; pos++){
                         // check it against the rest
                         if(nextDigit == turn[0][pos]){
-                            useIt=false
+                            useIt=false;
                         }
                     }
                 }while(useIt==false) // keep checking until it comes out good
             }
             else{
                 // don't care if we have doubles, just use the number
-               nextDigit = Math.floor((Math.random() * (maxCol-minCol+1)) + minCol) 
+               nextDigit = Math.floor((Math.random() * (maxCol-minCol+1)) + minCol) ;
             }
             // add it to the code
-            turn[0][a] = nextDigit
+            turn[0][a] = nextDigit;
         }
         
     }
@@ -270,19 +304,19 @@
             var used = new Array(3); // this will need to be the length of the actual code
             var matched = new Array(3); // which is based on level difficulty
 
-            var white=0
-            var black=0
+            var white=0;
+            var black=0;
             // clear the arrays
             for(var a =0;a<4;a++){
-                used[a]=false
-                matched[a]=false
+                used[a]=false;
+                matched[a]=false;
             }
             // do the white check
             for(var a =0;a<4;a++){
                 if (turn[currentGuess][a]==turn[0][a]){
-                    used[a]=true
-                    matched[a]=true
-                    white++
+                    used[a]=true;
+                    matched[a]=true;
+                    white++;
                 }
             }
            // do the black check
@@ -290,9 +324,9 @@
                 for(var b=0;b<4;b++){
                     // if code and guess peg not used/matched yet but are the same then it's a black peg!
                     if(!used[a] && !matched[b] && turn[currentGuess][a]==turn[0][b]){
-                        used[a]=true
-                        matched[b]=true
-                        black++
+                        used[a]=true;
+                        matched[b]=true;
+                        black++;
                     }
                 }
             }
@@ -309,33 +343,22 @@
     function checkWin(){
         // if game is won, or out of goes, or given up then stop playing
         if(score[currentGuess-1][0]==4){
-            playing=false
-            drawBoard()
-            saveResult()
-           // alert("You did it!!")
+            playing=false;
+            drawBoard();
+            saveResult();
         }
         else if(currentGuess>10){
-            playing=false
-            drawBoard()
-            saveResult()
-          //  alert("Out of goes :(")
+            playing=false;
+            drawBoard();
+            saveResult();
         }
                   
     }
         
     function saveResult(){ 
-        /* use an xmlhttprequest to store game result in the database
-        and to display the return value 'Success' or not */
-            var score = (11-currentGuess)*100;
-            var resultString="p="+currentPlayer+"&l="+gameLevel+"&ps=0&gt=0&sc=" + score;
-            
-            xh = new XMLHttpRequest();
-            xh.onreadystatechange=function(){
-                if(xh.readyState== 4 && xh.status==200){
-                    document.getElementById("chk").innerHTML=xh.responseText;}
-            }
-            xh.open("GET","saveResult.php?" + resultString,true);
-            xh.send();
+        // store game result in the database
+        var score = (11-currentGuess)*100;
+        socket.emit('saveResult',{pName: currentPlayer, level:  gameLevel, pskill: 0, GameType: 0, Score: score});
     }
     
     function showhash(){
@@ -344,55 +367,28 @@
     }
     
     function login(){
-        // hash the password, transmit that and th user anme
-        // if it is a match then return will be player ID
-        // if not then will be -1
-        var loginDetail="p="+uname.value+"&ph="+hashcode(pwd.value);
+        // hash the password, transmit that and the user name
+        // if it is a match then will transmit login signal
         
-        xh = new XMLHttpRequest();
-        xh.onreadystatechange=function(){
-            if(xh.readyState== 4 && xh.status==200){
-                
-                currentPlayer=xh.responseText;
-                if(currentPlayer>""){
-                    // clear boxes
-                    uname.value="";
-                    pwd.value="";
-                    // collapse panel
-                    togglePanel('profile');
-                    togglePanelInvisibility('stats',false);
-                    
-                    getStats();
-                }
-            }
-                //alert(xh.responseText)}
-        }
-        xh.open("GET","login.php?" + loginDetail,true);
-        xh.send();
+        // send a message with username and hashed password to the server
+        socket.emit('attemptLogin',{PName: uname.value, PpwdHash: hashcode(pwd.value)});
     }
     
     function getStats(){
-        xh = new XMLHttpRequest();
-        xh.onreadystatechange=function(){
-            if(xh.readyState== 4 && xh.status==200){
-                stcnt.innerHTML="Stats for "+currentPlayer + "<br><table>"+xh.responseText+"</table";
-                
-            }
-                //alert(xh.responseText)}
-        }
-        xh.open("GET","getStats.php?p=" + currentPlayer,true);
-        xh.send();
+        // emit the getStats message to the server, should be replied to with a 'stats' message
+        socket.emit('getStats',{PName: currentPlayer});
     }
     
     function logout(){
-        alert("logged out")
+       // log the current player out by setting player name to empty string and hiding stats panel
         currentPlayer=""
+        usrLbl.textContent="Please login"
         togglePanelInvisibility('stats',true);
     }
     
     function hashcode(s){
         // taken wholesale off a forum - stackoverflow I think
-  return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);              
-}
+        return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);              
+    }
 </script>
 </html>
